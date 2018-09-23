@@ -19,7 +19,7 @@ function seedBlogData() {
   for (let i = 1; i <= 10; i++) {
     seedData.push(generateBlogData());
   }
-  return Blog.instertMany(seedData);
+  return Blog.insertMany(seedData);
 }
 
 function generateAuthor() {
@@ -116,25 +116,25 @@ describe('Blog API resource', function() {
         .then(function(_res) {
           res = _res;
           expect(res).to.have.status(200);
-          expect(res.body.posts).to.have.lengthOf.at.least(1);
+          expect(res.body).to.have.lengthOf.at.least(1);
           return Blog.count();
         })
         .then(function(count) {
-          expect(res.body.blogs).to.have.lengthOf(count);
+          expect(res.body).to.have.lengthOf(count);
         });
     });
 
     it('should get blog posts with correct fields', function() {
-      let resBlog;
+      let resPost;
       return chai
         .request(app)
         .get('/posts')
         .then(function(res) {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expect(res.body.blogs).to.be.a('array');
-          expect(res.body.blogs).to.have.lengthOf.at.least(1);
-          res.body.blogs.forEach(function(blog) {
+          expect(res.body).to.be.a('array');
+          expect(res.body).to.have.lengthOf.at.least(1);
+          res.body.forEach(function(blog) {
             expect(blog).to.be.a('object');
             expect(blog).to.include.keys(
               'id',
@@ -144,13 +144,13 @@ describe('Blog API resource', function() {
               'created'
             );
           });
+          resPost = res.body[0];
+          return Blog.findById(resPost.id);
         })
-        .then(function(blog) {
-          expect(resBlog.id).to.equal(blog.id);
-          expect(resBlog.author).to.equal(blog.author);
-          expect(resBlog.content).to.equal(blog.content);
-          expect(resBlog.title).to.equal(blog.title);
-          expect(resBlog.created).to.equal(blog.created);
+        .then(blog => {
+          expect(resPost.title).to.equal(blog.title);
+          expect(resPost.content).to.equal(blog.content);
+          expect(resPost.author).to.equal(blog.authorName);
         });
     });
   });
@@ -166,7 +166,7 @@ describe('Blog API resource', function() {
         .then(function(res) {
           expect(res).to.have.status(201);
           expect(res).to.be.json;
-          espect(res.body).to.be.a('object');
+          expect(res.body).to.be.a('object');
           expect(res.body).to.include.keys(
             'id',
             'author',
@@ -175,17 +175,18 @@ describe('Blog API resource', function() {
             'created'
           );
           expect(res.body.id).to.not.be.null;
-          expect(res.body.author).to.equal(newBlog.author);
+          expect(res.body.author).to.equal(
+            `${newBlog.author.firstName} ${newBlog.author.lastName}`
+          );
           expect(res.body.content).to.equal(newBlog.content);
           expect(res.body.title).to.equal(newBlog.title);
-          expect(res.body.created).to.equal(newBlog.created);
           return Blog.findById(res.body.id);
         })
         .then(function(blog) {
-          expect(blog.author).to.equal(newBlog.author);
-          expect(blog.content).to.equal(newBlog.content);
           expect(blog.title).to.equal(newBlog.title);
-          expect(blog.created).to.equal(newBlog.created);
+          expect(blog.content).to.equal(newBlog.content);
+          expect(blog.author.firstName).to.equal(newBlog.author.firstName);
+          expect(blog.author.lastName).to.equal(newBlog.author.lastName);
         });
     });
   });
